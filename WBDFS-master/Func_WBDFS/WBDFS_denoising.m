@@ -13,7 +13,7 @@ function [vxWBDFS, vyWBDFS, vzWBDFS] = WBDFS_denoising(vx,vy,vz,dx,dy,dz,mask,nx
 % This function is created by Chaehyuk Im by applying wall boundary
 % information into Divergence-free Smoothing method and using singular
 % value decomposition
-
+%
 % (c) Chaehyuk Im 2018
 
 % total number of block
