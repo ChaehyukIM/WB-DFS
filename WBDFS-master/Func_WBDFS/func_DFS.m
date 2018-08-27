@@ -40,8 +40,14 @@ TT=ctranspose(Psi)*M*Psi;
 % Phi=Psi*U;
 Phi=Psi*Q;
 
-Phi=gpuArray(Phi);
-lambda=gpuArray(lambda);
+if gpuDeviceCount == 0
+    Phi=gather(Phi);
+    lambda=gather(lambda);
+elseif gpuDeviceCount >= 1
+    Phi=gpuArray(Phi);
+    lambda=gpuArray(lambda);    
+end
+    
 
 smin=0.02;
 smax=1;
@@ -54,13 +60,22 @@ for xx=1:blocknumberx
     for yy=1:blocknumbery
         for zz=1:blocknumberz
             if sum(block(xx,yy,zz).mask(:))~=0
-                Uexp=gpuArray(block(xx,yy,zz).Uexp);
-                Us=gpuArray(block(xx,yy,zz).Uexp);
+                if gpuDeviceCount == 0
+                    Uexp=gather(block(xx,yy,zz).Uexp);
+                    Us=gather(block(xx,yy,zz).Uexp);
+                elseif gpuDeviceCount >= 1
+                    Uexp=gpuArray(block(xx,yy,zz).Uexp);
+                    Us=gpuArray(block(xx,yy,zz).Uexp);
+                end
                 Us1=Us;   % Us(0)=Us=Uexp;
                 syms x
-                Usr= @(x) Phi*(gpuArray(eye(size(lambda,1))) + x*lambda)^-1*Phi'*Uexp;
-%                 GCV2 = @(x) ((Usr(x)-Us1)'*(Usr(x)-Us1))/(3*n)/(1-trace((gpuArray(eye(size(lambda,1)))+x*lambda)^-1)/(3*n))^2;
-                GCV2 = @(x) (norm(Usr(x)-Us1))^2/(3*n)/(1-trace((gpuArray(eye(size(lambda,1)))+x*lambda)^-1)/(3*n))^2;          % EQ 10
+                if gpuDeviceCount == 0
+                    Usr= @(x) Phi*((eye(size(lambda,1))) + x*lambda)^-1*Phi'*Uexp;
+                    GCV2 = @(x) (norm(Usr(x)-Us1))^2/(3*n)/(1-trace(((eye(size(lambda,1)))+x*lambda)^-1)/(3*n))^2;          % EQ 10
+                elseif gpuDeviceCount >= 1
+                    Usr= @(x) Phi*(gpuArray(eye(size(lambda,1))) + x*lambda)^-1*Phi'*Uexp;
+                    GCV2 = @(x) (norm(Usr(x)-Us1))^2/(3*n)/(1-trace((gpuArray(eye(size(lambda,1)))+x*lambda)^-1)/(3*n))^2;          % EQ 10
+                end
                 
                 s = fminbnd(GCV2,smin,smax); % minimize the smoothing parameter
                 s2=s;    Us2=Usr(s2); % update Us(r)
