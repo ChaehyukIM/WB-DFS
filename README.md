@@ -4,4 +4,6 @@
 #### Introduction
 WB-DFS is denoising method to reduce the velocity noise.
 
+The WB-DFS function will be uploaded after the WB-DFS paper is published in the future.
+
 A Detailed description of this method will be provided in the future.
